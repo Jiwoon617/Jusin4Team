@@ -2,7 +2,7 @@
 #include "IOManager.h"
 
 
-std::wstring IOManager::selectSaveFilePath()
+std::wstring IOManager::selectSaveFilePath(void)
 {
 	OPENFILENAME ofn;
 	wchar_t szFile[260] = { 0 };
@@ -30,7 +30,7 @@ std::wstring IOManager::selectSaveFilePath()
 	return std::wstring();
 }
 
-std::wstring IOManager::selectLoadFilePath()
+std::wstring IOManager::selectLoadFilePath(void)
 {
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -61,7 +61,7 @@ std::wstring IOManager::selectLoadFilePath()
 	return std::wstring();
 }
 
-std::wstring IOManager::selectFolderPath()
+std::wstring IOManager::selectFolderPath(void)
 {
 	BROWSEINFO bi = { 0 };
 	bi.lpfn = NULL;
@@ -99,6 +99,10 @@ std::wstring IOManager::selectFolderPath()
 //		serialize(handle, value); });
 HRESULT IOManager::load(const std::wstring& path, std::function<void(HANDLE)> function)
 {
+	if (path == L"")
+		return E_FAIL;
+
+
 	HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -117,6 +121,9 @@ HRESULT IOManager::load(const std::wstring& path, std::function<void(HANDLE)> fu
 //		deserialize(handle, value); });
 HRESULT IOManager::save(const std::wstring& path, std::function<void(HANDLE)> function)
 {
+	if (path == L"")
+		return E_FAIL;
+
 	HANDLE hFile = CreateFile(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -127,4 +134,48 @@ HRESULT IOManager::save(const std::wstring& path, std::function<void(HANDLE)> fu
 
 	CloseHandle(hFile);
 	return S_OK;
+}
+
+
+std::list<std::pair<std::wstring, std::wstring>> IOManager::findAllFiles(const std::wstring& folderPath)
+{
+	std::list<std::pair< std::wstring, std::wstring>> result = {};
+	std::list<std::wstring> folderQueue = { folderPath };
+	WIN32_FIND_DATA findData;
+
+	while (!folderQueue.empty())
+	{
+		std::wstring path = folderQueue.front();
+		folderQueue.pop_front();
+
+		HANDLE hFind = FindFirstFile((path + L"\\*.*").c_str(), &findData);
+		if (hFind == INVALID_HANDLE_VALUE)
+			continue;
+
+		do
+		{
+			if (wcscmp(findData.cFileName, L".") == 0 || wcscmp(findData.cFileName, L"..") == 0)
+				continue;
+
+
+			wchar_t fullPath[MAX_PATH];
+			PathCombine(fullPath, path.c_str(), findData.cFileName);
+
+
+			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				folderQueue.push_back(fullPath);
+			}
+			else
+			{
+				result.push_back({ findData.cFileName, fullPath });
+			}
+
+		}
+		while (FindNextFile(hFind, &findData) != 0);
+
+		FindClose(hFind);
+	}
+
+	return result;
 }

@@ -2,12 +2,13 @@
 class IOManager
 {
 private:
-	IOManager() = default;
-	~IOManager() = default;
+	IOManager(void) = default;
+	~IOManager(void) = default;
 public:
-	static std::wstring selectSaveFilePath();
-	static std::wstring selectLoadFilePath();
-	static std::wstring selectFolderPath();
+	static std::wstring selectSaveFilePath(void);	
+	static std::wstring selectLoadFilePath(void);
+	static std::wstring selectFolderPath(void);
+	static std::list<std::pair<std::wstring, std::wstring>> findAllFiles(const std::wstring& folderPath);
 
 	static HRESULT load(const std::wstring& path, std::function<void(HANDLE)> function);
 	static HRESULT save(const std::wstring& path, std::function<void(HANDLE)> function);

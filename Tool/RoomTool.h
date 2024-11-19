@@ -79,4 +79,6 @@ public:
 	afx_msg void OnBnClickedRoomLoad();
 	afx_msg void OnBnClickedBackimage();
 	afx_msg void OnBnClickedUnitLoad();
+	CStatic roomImageName;
+	afx_msg void OnDestroy();
 };
