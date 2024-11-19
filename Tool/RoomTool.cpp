@@ -39,7 +39,7 @@ void RoomTool::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_COMBO_EFFTIME, effectTimeCombo);
-	DDX_Control(pDX, IDC_COMBO_ACTIVECOND, activeCondCombo);
+	DDX_Control(pDX, IDC_COMBO_ACTIVECOND, activeCondCombo	);
 	DDX_Control(pDX, IDC_COMBO_EFFTARGET, effectTargetCombo);
 	DDX_Control(pDX, IDC_COMBO_EFFECT, effectCombo);
 	DDX_CBString(pDX, IDC_COMBO_EFFTIME, effectTime);
@@ -58,6 +58,7 @@ void RoomTool::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LIST_UNIT, unitList);
 	//DDX_Control(pDX, IDLOAD_BACKIMAGE, imagePreview);
 	DDX_Control(pDX, IDC_PICTURE_PREVIEW, imagePreview);
+	DDX_Control(pDX, IDC_STATIC_ROOMIMAGEFILENAME, roomImageName);
 }
 
 
@@ -68,6 +69,7 @@ BEGIN_MESSAGE_MAP(RoomTool, CDialog)
 	ON_BN_CLICKED(IDLOAD_ROOM, &RoomTool::OnBnClickedRoomLoad)
 	ON_BN_CLICKED(IDLOAD_BACKIMAGE, &RoomTool::OnBnClickedBackimage)
 	ON_BN_CLICKED(IDLOAD_UNIT, &RoomTool::OnBnClickedUnitLoad)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -178,6 +180,8 @@ void RoomTool::OnBnClickedRoomSave()
 		});
 
 
+
+
 	UpdateData(FALSE);
 }
 
@@ -187,16 +191,19 @@ void RoomTool::OnBnClickedRoomLoad()
 	UpdateData(TRUE);
 	Room* newRoom = new Room();
 	
-	IOManager::load(IOManager::selectLoadFilePath(), [&](HANDLE handle)->void
+	HRESULT result = IOManager::load(IOManager::selectLoadFilePath(), [&](HANDLE handle)->void
 		{
 			IOManager::deserialize(handle, newRoom->roomName);
 			IOManager::deserialize(handle, newRoom->backImageName);
 
 			int size = 0;
 			IOManager::deserialize(handle, size);
+			newRoom->enemy.reserve(size);
 			for (int i = 0; i < size; i++)
 			{
-				IOManager::deserialize(handle, newRoom->enemy[i]);
+				std::wstring enemyName;
+				IOManager::deserialize(handle, enemyName);
+				newRoom->enemy.push_back(enemyName);
 			}
 
 			IOManager::deserialize(handle, size);
@@ -216,7 +223,26 @@ void RoomTool::OnBnClickedRoomLoad()
 			}
 		});
 
+	if (FAILED(result))
+	{
+		UpdateData(FALSE);
+		return;
+	}
 
+	imagePreview.SetBitmap(NULL);
+	image.Destroy();
+	CString path = backImage;
+	if (newRoom->backImageName != L"")
+	{
+		backImage = newRoom->backImageName.c_str();
+		image.Load(backImage);
+		imagePreview.SetBitmap(image);
+
+		PathStripPath(path.GetBuffer());
+		path.ReleaseBuffer();
+	}
+
+	roomImageName.SetWindowTextW(path.GetString());
 
 	enemy1 = newRoom->enemy[0].c_str();
 	enemy2 = newRoom->enemy[1].c_str();
@@ -226,8 +252,10 @@ void RoomTool::OnBnClickedRoomLoad()
 	for (auto& item : newRoom->roomEffect)
 	{
 		effects[item->effectName.c_str()] = item;
+		effectList.AddString(item->effectName.c_str());
 	}
 
+	delete newRoom;
 
 	UpdateData(FALSE);
 }
@@ -236,9 +264,17 @@ void RoomTool::OnBnClickedRoomLoad()
 void RoomTool::OnBnClickedBackimage()
 {
 	backImage = IOManager::selectLoadFilePath().c_str();
+	imagePreview.SetBitmap(NULL);
 	image.Destroy();
 	image.Load(backImage);
 	imagePreview.SetBitmap(image);
+
+	CString path = backImage;
+	PathStripPath(path.GetBuffer());
+	path.ReleaseBuffer();
+
+	roomImageName.SetWindowTextW(path.GetString());
+
 }
 
 
@@ -251,7 +287,7 @@ void RoomTool::OnBnClickedUnitLoad()
 	std::vector<UNITDATA*> units;
 
 
-	IOManager::load(IOManager::selectLoadFilePath(), [&](HANDLE handle)->void
+	HRESULT result = IOManager::load(IOManager::selectLoadFilePath(), [&](HANDLE handle)->void
 		{
 			int unitCount = 0;
 			IOManager::deserialize(handle, unitCount);
@@ -276,13 +312,32 @@ void RoomTool::OnBnClickedUnitLoad()
 			}
 		});
 
+	if (FAILED(result))
+	{
+		UpdateData(FALSE);
+		return;
+	}
+
 
 	for (auto& item : units)
 	{
 		unitList.AddString(item->jobName.c_str());
 		delete item;
 	}
-
+	units.clear();
 
 	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnDestroy()
+{
+	CDialog::OnDestroy();
+
+	for (auto& effect : effects)
+	{
+		delete effect.second;
+	}
+	effects.clear();
+
 }

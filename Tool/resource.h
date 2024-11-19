@@ -73,6 +73,7 @@
 #define IDC_EDIT_VIRTUE                 1026
 #define IDLOAD_BACKIMAGE                1026
 #define IDC_PICTURE_PREVIEW             1028
+#define IDC_STATIC_ROOMIMAGEFILENAME    1029
 
 // Next default values for new objects
 // 
@@ -80,7 +81,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        315
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1029
+#define _APS_NEXT_CONTROL_VALUE         1030
 #define _APS_NEXT_SYMED_VALUE           315
 #endif
 #endif
