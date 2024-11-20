@@ -43,9 +43,23 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 
-private:
-	std::map<CString, RoomEffect*> effects;
+public:
+	afx_msg void OnBnClickedEffectAdd();
+	afx_msg void OnLbnSelchangeListEffect();
+	afx_msg void OnBnClickedRoomSave();
+	afx_msg void OnBnClickedRoomLoad();
+	afx_msg void OnBnClickedBackimage();
+	afx_msg void OnBnClickedUnitLoad();
+	afx_msg void OnDestroy();
+	afx_msg void OnBnClickedAddEnemy1();
+	afx_msg void OnBnClickedAddEnemy2();
+	afx_msg void OnBnClickedAddEnemy3();
+	afx_msg void OnBnClickedAddEnemy4();
+	afx_msg void OnBnClickedDeleteEffect();
+	afx_msg void OnBnClickedFindUnit();
+	afx_msg void OnBnClickedFindEffect();
 
+private:
 	int effectAmount;
 	int effectLength;
 	int condAmount;
@@ -61,9 +75,12 @@ private:
 	CString enemy2;
 	CString enemy3;
 	CString enemy4;
+	CString targetEffect;
+	CString targetUnit;
 
 	CImage image;
 	CStatic imagePreview;
+	CStatic roomImageName;
 
 	CComboBox effectTimeCombo;
 	CComboBox activeCondCombo;
@@ -72,13 +89,6 @@ private:
 
 	CListBox effectList;
 	CListBox unitList;
-public:
-	afx_msg void OnBnClickedEffectAdd();
-	afx_msg void OnLbnSelchangeListEffect();
-	afx_msg void OnBnClickedRoomSave();
-	afx_msg void OnBnClickedRoomLoad();
-	afx_msg void OnBnClickedBackimage();
-	afx_msg void OnBnClickedUnitLoad();
-	CStatic roomImageName;
-	afx_msg void OnDestroy();
+
+	std::map<CString, RoomEffect*> effects;
 };

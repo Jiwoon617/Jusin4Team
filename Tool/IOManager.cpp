@@ -157,19 +157,13 @@ std::list<std::pair<std::wstring, std::wstring>> IOManager::findAllFiles(const s
 			if (wcscmp(findData.cFileName, L".") == 0 || wcscmp(findData.cFileName, L"..") == 0)
 				continue;
 
-
 			wchar_t fullPath[MAX_PATH];
 			PathCombine(fullPath, path.c_str(), findData.cFileName);
-
-
+			
 			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			{
 				folderQueue.push_back(fullPath);
-			}
 			else
-			{
 				result.push_back({ findData.cFileName, fullPath });
-			}
 
 		}
 		while (FindNextFile(hFind, &findData) != 0);

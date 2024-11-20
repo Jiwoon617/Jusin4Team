@@ -27,6 +27,8 @@ RoomTool::RoomTool(CWnd* pParent /*=nullptr*/)
 	, enemy2(_T(""))
 	, enemy3(_T(""))
 	, enemy4(_T(""))
+	, targetEffect(_T(""))
+	, targetUnit(_T(""))
 {
 
 }
@@ -39,7 +41,7 @@ void RoomTool::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_COMBO_EFFTIME, effectTimeCombo);
-	DDX_Control(pDX, IDC_COMBO_ACTIVECOND, activeCondCombo	);
+	DDX_Control(pDX, IDC_COMBO_ACTIVECOND, activeCondCombo);
 	DDX_Control(pDX, IDC_COMBO_EFFTARGET, effectTargetCombo);
 	DDX_Control(pDX, IDC_COMBO_EFFECT, effectCombo);
 	DDX_CBString(pDX, IDC_COMBO_EFFTIME, effectTime);
@@ -59,6 +61,8 @@ void RoomTool::DoDataExchange(CDataExchange* pDX)
 	//DDX_Control(pDX, IDLOAD_BACKIMAGE, imagePreview);
 	DDX_Control(pDX, IDC_PICTURE_PREVIEW, imagePreview);
 	DDX_Control(pDX, IDC_STATIC_ROOMIMAGEFILENAME, roomImageName);
+	DDX_Text(pDX, IDC_EDIT_FINDEFF, targetEffect);
+	DDX_Text(pDX, IDC_EDIT_FINDUNITNAME, targetUnit);
 }
 
 
@@ -70,6 +74,13 @@ BEGIN_MESSAGE_MAP(RoomTool, CDialog)
 	ON_BN_CLICKED(IDLOAD_BACKIMAGE, &RoomTool::OnBnClickedBackimage)
 	ON_BN_CLICKED(IDLOAD_UNIT, &RoomTool::OnBnClickedUnitLoad)
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDBUTTON_ADDENEMY1, &RoomTool::OnBnClickedAddEnemy1)
+	ON_BN_CLICKED(IDBUTTON_ADDENEMY2, &RoomTool::OnBnClickedAddEnemy2)
+	ON_BN_CLICKED(IDBUTTON_ADDENEMY3, &RoomTool::OnBnClickedAddEnemy3)
+	ON_BN_CLICKED(IDBUTTON_ADDENEMY4, &RoomTool::OnBnClickedAddEnemy4)
+	ON_BN_CLICKED(IDREMOVE_EFFECT, &RoomTool::OnBnClickedDeleteEffect)
+	ON_BN_CLICKED(IDFIND_UNIT, &RoomTool::OnBnClickedFindUnit)
+	ON_BN_CLICKED(IDFIND_EFFECT, &RoomTool::OnBnClickedFindEffect)
 END_MESSAGE_MAP()
 
 
@@ -229,20 +240,42 @@ void RoomTool::OnBnClickedRoomLoad()
 		return;
 	}
 
-	imagePreview.SetBitmap(NULL);
+	backImage = newRoom->backImageName.c_str();
+	//imagePreview.SetBitmap(NULL);
 	image.Destroy();
+	image.Load(backImage);
+	//imagePreview.SetBitmap(image);
+
 	CString path = backImage;
-	if (newRoom->backImageName != L"")
+	PathStripPath(path.GetBuffer());
+	path.ReleaseBuffer();
+
+	if (image == NULL)
 	{
-		backImage = newRoom->backImageName.c_str();
-		image.Load(backImage);
-		imagePreview.SetBitmap(image);
-
-		PathStripPath(path.GetBuffer());
-		path.ReleaseBuffer();
+		roomImageName.SetWindowTextW(L"Room Image Preview");
 	}
+	else
+	{
+		roomImageName.SetWindowTextW(path.GetString());
 
-	roomImageName.SetWindowTextW(path.GetString());
+		CWnd* pPictureControl = GetDlgItem(IDC_PICTURE_PREVIEW);
+		if (!pPictureControl)
+			return;
+
+		CRect rect;
+		pPictureControl->GetClientRect(&rect);
+		CClientDC dc(pPictureControl);
+
+		rect.right = 500;
+		rect.bottom = 500;
+		dc.IntersectClipRect(rect);
+
+		int imgWidth = image.GetWidth();
+		int imgHeight = image.GetHeight();
+
+		image.Draw(dc.m_hDC, 0, 0, rect.Width(), rect.Height(), 0, 0, imgWidth, imgHeight);
+
+	}
 
 	enemy1 = newRoom->enemy[0].c_str();
 	enemy2 = newRoom->enemy[1].c_str();
@@ -264,17 +297,39 @@ void RoomTool::OnBnClickedRoomLoad()
 void RoomTool::OnBnClickedBackimage()
 {
 	backImage = IOManager::selectLoadFilePath().c_str();
-	imagePreview.SetBitmap(NULL);
+	//imagePreview.SetBitmap(NULL);
 	image.Destroy();
 	image.Load(backImage);
-	imagePreview.SetBitmap(image);
+	//imagePreview.SetBitmap(image);
 
 	CString path = backImage;
 	PathStripPath(path.GetBuffer());
 	path.ReleaseBuffer();
 
+	if (image == NULL)
+	{
+		roomImageName.SetWindowTextW(L"Room Image Preview");
+		return;
+	}
+
 	roomImageName.SetWindowTextW(path.GetString());
 
+	CWnd* pPictureControl = GetDlgItem(IDC_PICTURE_PREVIEW);
+	if (!pPictureControl)
+		return;
+
+	CRect rect;
+	pPictureControl->GetClientRect(&rect);
+	CClientDC dc(pPictureControl);
+
+	rect.right = 500;
+	rect.bottom = 500;
+	dc.IntersectClipRect(rect);
+
+	int imgWidth = image.GetWidth();
+	int imgHeight = image.GetHeight();
+
+	image.Draw(dc.m_hDC, 0, 0, rect.Width(), rect.Height(), 0, 0, imgWidth, imgHeight);
 }
 
 
@@ -294,7 +349,7 @@ void RoomTool::OnBnClickedUnitLoad()
 
 			for (int i = 0; i < unitCount; i++)
 			{
-				CString key;
+				std::wstring key;
 				IOManager::deserialize(handle, key);
 				UNITDATA* loadedUnit = new UNITDATA();
 				IOManager::deserialize(handle, loadedUnit->accuracyModifier);
@@ -303,7 +358,6 @@ void RoomTool::OnBnClickedUnitLoad()
 				IOManager::deserialize(handle, loadedUnit->dodge);
 				IOManager::deserialize(handle, loadedUnit->jobName);
 				IOManager::deserialize(handle, loadedUnit->maxHP);
-				IOManager::deserialize(handle, loadedUnit->jobName);
 				IOManager::deserialize(handle, loadedUnit->protection);
 				IOManager::deserialize(handle, loadedUnit->speed);
 				IOManager::deserialize(handle, loadedUnit->virtueChance);
@@ -340,4 +394,108 @@ void RoomTool::OnDestroy()
 	}
 	effects.clear();
 
+}
+
+void RoomTool::OnBnClickedAddEnemy1()
+{
+	UpdateData(TRUE);
+	CString selected;
+	unitList.GetText(unitList.GetCurSel(), selected);
+
+	enemy1 = selected;
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedAddEnemy2()
+{
+	UpdateData(TRUE);
+	CString selected;
+	unitList.GetText(unitList.GetCurSel(), selected);
+
+	enemy2 = selected;
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedAddEnemy3()
+{
+	UpdateData(TRUE);
+	CString selected;
+	unitList.GetText(unitList.GetCurSel(), selected);
+
+	enemy3 = selected;
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedAddEnemy4()
+{
+	UpdateData(TRUE);
+	CString selected;
+	unitList.GetText(unitList.GetCurSel(), selected);
+
+	enemy4 = selected;
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedDeleteEffect()
+{
+	UpdateData(TRUE);
+	int selectedIndex = effectList.GetCurSel();
+	CString selected;
+	effectList.GetText(selectedIndex, selected);
+
+	auto& iter = effects.find(selected);
+	if(iter == effects.end())
+		return;
+
+	effectList.DeleteString(selectedIndex);
+	delete (*iter).second;
+	effects.erase(iter);
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedFindUnit()
+{
+	UpdateData(TRUE);
+	int index = unitList.FindString(0, targetUnit);
+
+	if (LB_ERR == index)
+		return;
+
+	unitList.SetCurSel(index);
+	UpdateData(FALSE);
+}
+
+
+void RoomTool::OnBnClickedFindEffect()
+{
+	UpdateData(TRUE);
+	int index = effectList.FindString(0, targetEffect);
+
+	if (LB_ERR == index)
+		return;
+
+	effectList.SetCurSel(index);
+	CString		selectedEffectName;
+	effectList.GetText(index, selectedEffectName);
+
+	auto& iter = effects.find(selectedEffectName);
+
+	if (iter == effects.end())
+		return;
+
+	effectAmount = iter->second->effectAmount;
+	effectLength = iter->second->effectLength;
+	condAmount = iter->second->condAmount;
+	effectTime = iter->second->effectTime.c_str();
+	activeCond = iter->second->activeCond.c_str();
+	effectTarget = iter->second->effectTarget.c_str();
+	effect = iter->second->effect.c_str();
+	effectName = iter->second->effectName.c_str();
+
+	UpdateData(FALSE);
 }
