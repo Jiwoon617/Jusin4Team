@@ -235,9 +235,6 @@ void CUnittool::OnSave()
 				IOManager::serialize(handle, unit.second->dodge);
 				IOManager::serialize(handle, unit.second->jobName);
 				IOManager::serialize(handle, unit.second->maxHP);
-
-				IOManager::serialize(handle, unit.second->jobName);
-
 				IOManager::serialize(handle, unit.second->protection);
 				IOManager::serialize(handle, unit.second->speed);
 				IOManager::serialize(handle, unit.second->virtueChance);
@@ -276,9 +273,6 @@ void CUnittool::OnLoad()
 				IOManager::deserialize(handle, loadedUnit->dodge);
 				IOManager::deserialize(handle, loadedUnit->jobName);
 				IOManager::deserialize(handle, loadedUnit->maxHP);
-
-				IOManager::deserialize(handle, loadedUnit->jobName);
-
 				IOManager::deserialize(handle, loadedUnit->protection);
 				IOManager::deserialize(handle, loadedUnit->speed);
 				IOManager::deserialize(handle, loadedUnit->virtueChance);
